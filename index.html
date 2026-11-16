@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>囤肉斤两 · 肉价低的时候，冻多少斤才不后悔</title>
+<meta name="description" content="填现在的肉价、每周吃多少、冻柜放多少，再写几种你觉得可能的价格走势和把握。拖动斤数看每种走势下省多少、亏多少，给出按把握最划算、最不后悔、亏得起三个斤数。">
+<style>
+  :root{--bg:#f5f2ee;--card:#fff;--ink:#231f1c;--ink2:#58514b;--mut:#8c847c;--line:#dfd6cd;--red:#b3261e;--ok:#2b7a4b;--a:#a8432f;--hi:#fbeee9;--c0:#2b7a4b;--c1:#6b6259;--c2:#b3261e;--c3:#2f5fa8;--c4:#b07a16}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:22px 14px 72px}
+  h1{font-size:32px;line-height:1.2;margin:0 0 6px}
+  .sub{color:var(--ink2);margin:0;font-size:15.5px}
+  .muted{color:var(--mut);font-size:13.5px}
+  .hide{display:none !important}
+  button,input,select{font:inherit}
+  button{cursor:pointer}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13.5px;color:var(--ink2)}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0;min-width:0}
+  .h2{font-size:15px;font-weight:700;margin:0 0 10px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  /* 沙盘：斤数滑杆 + 每种走势一行读数 */
+  .big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .big .q{font-size:44px;font-weight:800;color:var(--a);line-height:1.1;font-variant-numeric:tabular-nums}
+  .big .u{font-size:18px;font-weight:700}
+  .slider{display:flex;align-items:center;gap:10px;margin:8px 0 2px}
+  .slider input[type=range]{flex:1;min-width:0;accent-color:var(--a)}
+  .slider input#plan{width:5.2em;text-align:right;padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  .ticks{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+  .tick{background:#fff;border:1px solid var(--line);border-radius:6px;padding:4px 10px;font-size:13.5px;color:var(--ink)}
+  .tick b{color:var(--a)}
+  .tick[aria-pressed="true"]{border-color:var(--a);box-shadow:0 0 0 1px var(--a) inset}
+  .lines{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+  .ln{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fffdfb}
+  .ln .nm{font-weight:600;min-width:0;overflow-wrap:anywhere}
+  .ln .nm i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+  .ln .v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ln .v.pos{color:var(--ok)} .ln .v.neg{color:var(--red)}
+  .ln .d{grid-column:1 / -1;font-size:12.5px;color:var(--mut)}
+  .ln.avg{background:var(--hi);border-color:#e8c9bf}
+  #chart{width:100%;height:auto;display:block}
+  .head{font-size:22px;font-weight:800;line-height:1.4;margin:0 0 4px}
+  .head b{color:var(--a)}
+  .err{background:#fff5f4;border:1px solid #f0c9c5;border-radius:8px;padding:10px 14px;color:var(--red);margin:10px 0}
+  .err ul{margin:4px 0 0;padding-left:20px}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  th,td{border-bottom:1px solid var(--line);padding:6px 6px;text-align:left;vertical-align:middle}
+  th{font-size:12.5px;color:var(--ink2);font-weight:600;white-space:nowrap}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.pos{color:var(--ok)} td.neg{color:var(--red)}
+  tr.cur td{background:var(--hi);font-weight:600}
+  #tbl td:first-child{white-space:nowrap} #tbl th{max-width:9em;white-space:normal;min-width:5.5em}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .form{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 18px}
+  .form label{display:flex;flex-direction:column;gap:3px;font-size:14px;color:var(--ink2)}
+  .form label span.in{display:flex;align-items:center;gap:6px;color:var(--ink)}
+  .form input{width:100%;min-width:0;padding:5px 7px;border:1px solid var(--line);border-radius:5px;text-align:right}
+  .form .u{white-space:nowrap;font-size:13.5px;color:var(--mut)}
+  #scTbl input{padding:4px 6px;border:1px solid var(--line);border-radius:5px}
+  #scTbl input.nm{width:100%;min-width:9em}
+  #scTbl input.num{width:4.8em;text-align:right}
+  input.bad{border-color:var(--red) !important;background:#fff5f4}
+  .del{background:none;border:1px solid var(--line);border-radius:5px;color:var(--mut);padding:2px 8px}
+  .btn{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-size:14px;color:var(--ink)}
+  .btn.pri{background:var(--ink);border-color:var(--ink);color:#fff}
+  .dl{display:flex;flex-wrap:wrap;gap:8px}
+  .foot{color:var(--mut);font-size:13px;margin-top:22px}
+  .foot li{margin:3px 0}
+  @media (max-width:760px){ h1{font-size:27px} .big .q{font-size:38px} .head{font-size:19px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>囤肉斤两</h1>
+  <p class="sub">肉价跌得低，想趁便宜冻一些。囤多了怕再跌，囤少了怕涨回去。写下你觉得可能的几种走势和把握，拖一下斤数，看每种走势下省多少、亏多少。</p>
+  <div class="chips" id="presets"></div>
+  <p class="muted" id="presetNote"></p>
+
+  <section class="panel" id="res">
+    <div class="h2">囤多少 <span class="muted" id="saveTag"></span></div>
+    <div class="err hide" id="errBox"></div>
+    <div id="okBox">
+      <p class="head" id="headline"></p>
+      <div class="big"><span class="q" id="qBig"></span><span class="u">斤</span><span class="muted" id="qNote"></span></div>
+      <div class="slider"><input type="range" id="qRange" min="0" step="0.5" aria-label="拖动囤多少斤"><input type="text" id="plan" inputmode="decimal" aria-label="打算囤多少斤"><span>斤</span></div>
+      <div class="ticks" id="ticks"></div>
+      <div class="lines" id="lines"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="chartPanel">
+    <div class="h2">每多囤一斤会怎样 <span class="muted">横轴 = 囤多少斤；纵轴 = 那种走势下省（上）或亏（下）多少元</span></div>
+    <svg id="chart" viewBox="0 0 900 340" role="img" aria-label="各走势下囤多少斤与省亏的关系"></svg>
+  </section>
+
+  <section class="panel" id="tblPanel">
+    <div class="h2">几个斤数并排看 <span class="muted">后悔 = 那种走势真来了，比当初最好的囤法少省的钱</span></div>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="h2">几种走势 <span class="muted">最多 5 种；价格在「第几周」之前一路线性变过去，之后不再变</span></div>
+    <div class="scroll"><table id="scTbl"></table></div>
+    <div style="margin-top:10px"><button type="button" class="btn" id="addSc">＋ 再加一种</button></div>
+  </section>
+
+  <section class="panel">
+    <div class="h2">你家的情况</div>
+    <div class="form">
+      <label>现在的单价<span class="in"><input type="text" id="price" inputmode="decimal"><span class="u">元/斤</span></span></label>
+      <label>平时每周吃<span class="in"><input type="text" id="weekly" inputmode="decimal"><span class="u">斤</span></span></label>
+      <label>冻柜还能放<span class="in"><input type="text" id="cap" inputmode="decimal"><span class="u">斤</span></span></label>
+      <label>最多冻几周<span class="in"><input type="text" id="weeks" inputmode="numeric"><span class="u">周</span></span></label>
+      <label>冻着的成本<span class="in"><input type="text" id="hold" inputmode="decimal"><span class="u">元/斤/周</span></span></label>
+      <label>最多亏得起<span class="in"><input type="text" id="loss" inputmode="decimal"><span class="u">元（留空 = 不看）</span></span></label>
+    </div>
+    <p class="muted" style="margin:8px 0 0">冻着的成本 = 电费加上冻久了口感变差，你觉得每斤每周值几分钱就填几分，没有标准答案。</p>
+  </section>
+
+  <section class="panel">
+    <div class="h2">带走</div>
+    <div class="dl">
+      <button type="button" class="btn pri" id="dlPng">结果卡 PNG</button>
+      <button type="button" class="btn" id="dlCsv">逐档表格 CSV</button>
+      <button type="button" class="btn" id="dlMd">文字 Markdown</button>
+      <button type="button" class="btn" id="dlJson">备份 JSON</button>
+      <button type="button" class="btn" id="impJson">导入备份</button>
+      <input type="file" id="impFile" accept=".json,application/json" class="hide">
+      <button type="button" class="btn" id="reset">恢复默认</button>
+    </div>
+    <p class="muted" style="margin:8px 0 0">输入只存在这台设备的浏览器里，不上传。</p>
+  </section>
+
+  <div class="foot">
+    <b>怎么算的、没算进去的事</b>
+    <ul>
+      <li>今天一次买好冻起来，从这周起每周吃掉「平时每周吃」那么多，吃完再照常买。囤的每一斤，省下的是「本来那周要按那时的价买」减去「今天的价」，再减去冻了几周的成本。</li>
+      <li>能囤的上限取「冻柜还能放」和「每周吃 × 最多冻几周」里小的那个；斤数按半斤一档，0 到上限每一档都算一遍。</li>
+      <li>按把握最划算 = 几种走势按把握加权后平均省得最多；最不后悔 = 不管哪种走势来了，跟「早知道就那样囤」比，少省的钱最多的那种情况尽量小；亏得起 = 每种走势都亏不超过你填的数，再在里面挑平均省得最多的。并列时取更少的斤数。</li>
+      <li>走势和把握是你自己的判断，这里不预测肉价；默认的价格、走势和把握都是虚构示例。不算一次买多的批发折扣、来回跑的路费和冻坏扔掉的情况。</li>
+    </ul>
+  </div>
+</div>
+<script src="./core.js"></script>
+<script src="./ui.js"></script>
+</body>
+</html>
